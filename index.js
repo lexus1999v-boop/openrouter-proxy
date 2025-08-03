@@ -21,7 +21,7 @@ app.post("/generate", async (req, res) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "openai/gpt-3.5-turbo",
+        model: "deepseek/deepseek-chat-v3-0324:free",
         messages: [
           {
             role: "user",
@@ -32,6 +32,12 @@ app.post("/generate", async (req, res) => {
     });
 
     const data = await response.json();
+
+    if (data.error) {
+      console.error("OpenRouter Error:", data.error);
+      return res.status(500).json({ error: "Ошибка от OpenRouter", details: data.error });
+    }
+
     const text = data?.choices?.[0]?.message?.content || "Ошибка: пустой ответ";
     res.json({ text });
   } catch (err) {
