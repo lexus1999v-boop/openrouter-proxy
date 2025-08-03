@@ -1,33 +1,43 @@
-import express from 'express';
-import fetch from 'node-fetch';
-import cors from 'cors';
+const express = require("express");
+const fetch = require("node-fetch");
+const bodyParser = require("body-parser");
+require("dotenv").config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-app.post('/generate', async (req, res) => {
+app.post("/generate", async (req, res) => {
+  const { prompt } = req.body;
+
   try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer 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',
-        'HTTP-Referer': 'https://neurovin.ru',
-        'X-Title': 'AvitoTools Generator'
+        "Authorization": "Bearer " + process.env.OPENROUTER_API_KEY,
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify({
+        model: "openai/gpt-3.5-turbo",
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ]
+      })
     });
+
     const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    console.error('Ошибка при запросе к OpenRouter:', error);
-    res.status(500).json({ error: 'Ошибка при запросе к OpenRouter' });
+    const text = data?.choices?.[0]?.message?.content || "Ошибка: пустой ответ";
+    res.json({ text });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Ошибка генерации", details: err.message });
   }
 });
 
 app.listen(port, () => {
-  console.log(`OpenRouter Proxy listening on port ${port}`);
+  console.log(`🚀 Server started on port ${port}`);
 });
